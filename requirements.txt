@@ -1,0 +1,11 @@
+pynput
+pyperclip
+Pillow
+opencv-python
+tk
+numpy
+requests
+pyperclip
+flask
+python-dotenv
+supabase
