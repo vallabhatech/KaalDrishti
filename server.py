@@ -5,8 +5,13 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
+
 from supabase import create_client, Client
 import threading
+
+from dotenv import load_dotenv
+load_dotenv()
+
 
 app = Flask(__name__)
 UPLOAD_DIR = "uploads"

@@ -1,1 +1,0 @@
- [Key.alt_l]  [Key.tab]  [Key.alt_l]  [Key.tab] ls [Key.enter] 
