@@ -1,35 +1,49 @@
-import requests
-from config import CLOUD_ENDPOINT
+import os
 
-# Test 1: Check if server is running
-print("🧪 Test 1: Checking server health...")
-try:
-    base_url = CLOUD_ENDPOINT.replace("/upload_log", "")
-    response = requests.get(f"{base_url}/health")
-    print(f"✅ Server responded: {response.status_code}")
-    print(f"📊 Health status: {response.json()}")
-    print()
-except Exception as e:
-    print(f"❌ Health check failed: {e}")
-    print()
+os.environ["KAALDRISHTI_API_TOKEN"] = "test-token"
 
-# Test 2: Check main endpoint
-print("🧪 Test 2: Checking main endpoint...")
-try:
-    response = requests.get(base_url)
-    print(f"✅ Main endpoint: {response.text}")
-    print()
-except Exception as e:
-    print(f"❌ Main endpoint failed: {e}")
-    print()
+from server import app
 
-print("=" * 50)
-print("📋 SUMMARY:")
-print("If you see health status above, check these values:")
-print("  - email_configured: should be true")
-print("  - supabase_url_set: should be true")
-print("  - supabase_key_set: should be true")
-print("  - supabase_connected: should be true")
-print()
-print("If any are false, you need to add those environment")
-print("variables in Render Dashboard!")
+
+def test_health():
+    response = app.test_client().get("/health")
+    assert response.status_code == 200
+    assert response.json["status"] == "ok"
+
+
+def test_event_requires_authentication():
+    response = app.test_client().post("/api/events", json={})
+    assert response.status_code == 401
+
+
+def test_event_rejects_non_synthetic_source():
+    client = app.test_client()
+    response = client.post(
+        "/api/events",
+        headers={"X-API-Key": "test-token"},
+        json={
+            "event_id": "1",
+            "client": "test",
+            "event_type": "demo",
+            "message": "hello",
+            "source": "device",
+        },
+    )
+    assert response.status_code == 400
+
+
+def test_event_is_accepted():
+    client = app.test_client()
+    response = client.post(
+        "/api/events",
+        headers={"X-API-Key": "test-token"},
+        json={
+            "event_id": "1",
+            "client": "test",
+            "event_type": "demo",
+            "message": "hello",
+            "source": "synthetic",
+        },
+    )
+    assert response.status_code == 202
+    assert response.json["status"] == "accepted"
