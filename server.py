@@ -1,18 +1,18 @@
-"""Flask receiver for consent-based KaalDrishti telemetry events."""
+"""KaalDrishti authenticated defensive telemetry API."""
 
 from __future__ import annotations
 
-import os
 from datetime import datetime, timezone
 
-from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 
-load_dotenv()
+from config import API_TOKEN, MAX_REQUEST_BYTES, PORT
+from detection import detect
+from storage import EventStore
 
 app = Flask(__name__)
-app.config["MAX_CONTENT_LENGTH"] = int(os.getenv("MAX_REQUEST_BYTES", "65536"))
-API_TOKEN = os.getenv("KAALDRISHTI_API_TOKEN", "")
+app.config["MAX_CONTENT_LENGTH"] = MAX_REQUEST_BYTES
+store = EventStore()
 
 
 def authorized() -> bool:
@@ -21,12 +21,19 @@ def authorized() -> bool:
 
 @app.get("/")
 def home():
-    return jsonify(service="KaalDrishti Telemetry API", status="ok")
+    return jsonify(service="KaalDrishti", purpose="endpoint threat detection lab", status="ok")
 
 
 @app.get("/health")
 def health():
     return jsonify(status="ok", authentication_configured=bool(API_TOKEN))
+
+
+@app.get("/api/events")
+def recent_events():
+    if not authorized():
+        return jsonify(error="unauthorized"), 401
+    return jsonify(events=store.recent())
 
 
 @app.post("/api/events")
@@ -43,15 +50,21 @@ def ingest_event():
     if missing:
         return jsonify(error="missing required fields", fields=missing), 400
 
-    if payload["source"] != "synthetic":
-        return jsonify(error="only synthetic lab events are accepted"), 400
+    if payload["source"] != "simulator" or payload.get("metadata", {}).get("authorized") is not True:
+        return jsonify(error="only authorized simulated lab events are accepted"), 400
 
-    record = {
-        **{key: payload[key] for key in required},
-        "received_at": datetime.now(timezone.utc).isoformat(),
-    }
-    print(f"event={record['event_id']} type={record['event_type']} client={record['client']}")
-    return jsonify(status="accepted", event=record), 202
+    detection = detect(payload)
+    if detection is None:
+        return jsonify(error="unsupported event type"), 422
+
+    received_at = datetime.now(timezone.utc).isoformat()
+    store.save(payload, detection.__dict__, received_at)
+    return jsonify(
+        status="accepted",
+        event_id=payload["event_id"],
+        detection=detection.__dict__,
+        received_at=received_at,
+    ), 202
 
 
 @app.errorhandler(413)
@@ -60,4 +73,4 @@ def request_too_large(_error):
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.getenv("PORT", "10000")))
+    app.run(host="0.0.0.0", port=PORT)
