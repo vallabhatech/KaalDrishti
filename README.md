@@ -27,6 +27,51 @@ KaalDrishti is a consent-based security telemetry lab for learning API ingestion
                                                          Console / test output
 ~~~
 
+## Quick start
+
+~~~powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+$env:KAALDRISHTI_API_TOKEN="change-me"
+python server.py
+~~~
+
+In a second terminal:
+
+~~~powershell
+$env:KAALDRISHTI_API_TOKEN="change-me"
+python main.py
+~~~
+
+Run tests with:
+
+~~~powershell
+pytest -q
+ruff check .
+~~~
+
+## API
+
+GET /health returns service health.
+
+POST /api/events requires X-API-Key and a JSON object containing event_id, client, event_type, message, and source. Only source=synthetic is accepted.
+
+The API returns 202 Accepted for a valid lab event.
+
+## Configuration
+
+Use .env.example as the local configuration template. Never commit real secrets.
+
+| Variable | Purpose | Default |
+|---|---|---|
+| KAALDRISHTI_API_TOKEN | API authentication token | empty |
+| KAALDRISHTI_ENDPOINT | Client ingestion endpoint | local API |
+| KAALDRISHTI_CLIENT | Client label | local-lab |
+| KAALDRISHTI_INTERVAL | Synthetic event interval | 10 seconds |
+| MAX_REQUEST_BYTES | Maximum request size | 65536 |
+| PORT | Server port | 10000 |
+
 ## Project structure
 
 ~~~text
@@ -43,83 +88,9 @@ KaalDrishti/
 └── utils/
 ~~~
 
-## Quick start
-
-### Windows PowerShell
-
-~~~powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-$env:KAALDRISHTI_API_TOKEN="change-me"
-~~~
-
-### Start the API
-
-~~~powershell
-python server.py
-~~~
-
-The API runs on http://127.0.0.1:10000 by default.
-
-### Start the synthetic client
-
-In a second terminal:
-
-~~~powershell
-$env:KAALDRISHTI_API_TOKEN="change-me"
-python main.py
-~~~
-
-### Run the tests
-
-~~~powershell
-pytest -q
-~~~
-
-### Run linting
-
-~~~powershell
-ruff check .
-~~~
-
-## Configuration
-
-Copy .env.example to .env for local development.
-
-| Variable | Purpose | Default |
-|---|---|---|
-| KAALDRISHTI_API_TOKEN | API authentication token | empty |
-| KAALDRISHTI_ENDPOINT | Client ingestion endpoint | local API |
-| KAALDRISHTI_CLIENT | Client label | local-lab |
-| KAALDRISHTI_INTERVAL | Synthetic event interval in seconds | 10 |
-| MAX_REQUEST_BYTES | Maximum API request size | 65536 |
-| PORT | Server port | 10000 |
-
-Never commit real secrets.
-
-## API
-
-### GET /health
-
-Returns service health and whether authentication has been configured.
-
-### POST /api/events
-
-Requires:
-- X-API-Key matching KAALDRISHTI_API_TOKEN
-- JSON object containing event_id, client, event_type, message, and source
-- source must be synthetic
-
-The API returns 202 Accepted for a valid lab event.
-
 ## Development quality gates
 
-Every push and pull request runs:
-- Python syntax/compile checks
-- Ruff linting
-- pytest
-- GitHub CodeQL analysis
+Every push and pull request runs Python checks, Ruff, pytest, and CodeQL analysis.
 
 ## Security model
 
