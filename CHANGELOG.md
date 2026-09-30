@@ -1,13 +1,13 @@
 # Changelog
 
-## 2026-09-30 — Modernization
+## 2026-09-30 — Defensive platform rebuild
 
-- Reworked the client around synthetic, consent-based security events.
-- Replaced legacy ingestion with authenticated JSON event ingestion.
-- Added request-size limits and strict synthetic-event validation.
-- Reworked the GUI into an explicit manual test-event tool.
-- Added pytest coverage for health, authentication, validation, and ingestion.
-- Added environment-backed configuration and .env.example.
-- Added CI and CodeQL workflows.
-- Removed legacy surveillance-oriented collection and persistence components.
-- Refreshed project documentation.
+- Rebuilt KaalDrishti around endpoint threat detection and security telemetry.
+- Added simulated adversary scenarios for defensive testing.
+- Added rule-based detection with severity, confidence, and ATT&CK technique mapping.
+- Added authenticated event ingestion and recent-event API.
+- Added local SQLite evidence storage.
+- Rebuilt the analyst GUI around scenario generation and detection results.
+- Expanded automated API and detection tests.
+- Kept CI, environment configuration, and repository hygiene improvements.
+- Removed sensor-capture and persistence-oriented runtime paths from the active architecture.
