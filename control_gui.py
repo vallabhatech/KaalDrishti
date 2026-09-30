@@ -1,31 +1,46 @@
-"""Small local GUI for sending an explicit synthetic test event."""
+"""Local analyst console for generating and inspecting lab events."""
+
+from __future__ import annotations
 
 import tkinter as tk
 from tkinter import messagebox
 
+import requests
+
 from config import API_TOKEN, CLOUD_ENDPOINT
-from main import build_event, send_event
+from main import SCENARIOS, build_event
 
 
 def run_gui() -> None:
     root = tk.Tk()
-    root.title("KaalDrishti Telemetry Lab")
-    root.geometry("420x220")
+    root.title("KaalDrishti — Analyst Console")
+    root.geometry("640x430")
 
-    tk.Label(root, text="Consent-based security telemetry lab", font=("Segoe UI", 13, "bold")).pack(pady=16)
-    tk.Label(root, text="This GUI sends only a synthetic event to the configured API.").pack(pady=4)
+    tk.Label(root, text="KaalDrishti Analyst Console", font=("Segoe UI", 18, "bold")).pack(pady=14)
+    tk.Label(root, text="Generate authorized synthetic threat scenarios and inspect detections.").pack()
 
-    def send_demo() -> None:
-        event = build_event("demo.manual_event", "Manual test event created from the local GUI.")
+    scenario = tk.StringVar(value=SCENARIOS[0][0])
+    tk.OptionMenu(root, scenario, *(name for name, _ in SCENARIOS)).pack(pady=12)
+
+    output = tk.Text(root, height=12, width=72)
+    output.pack(padx=16, pady=8)
+
+    def send() -> None:
         if not API_TOKEN:
-            messagebox.showwarning("Configuration", "Set KAALDRISHTI_API_TOKEN before sending events.")
+            messagebox.showwarning("Configuration", "Set KAALDRISHTI_API_TOKEN first.")
             return
-        if send_event(event):
-            messagebox.showinfo("Success", "Synthetic event accepted by the server.")
-        else:
-            messagebox.showerror("Delivery failed", f"Could not reach {CLOUD_ENDPOINT}")
+        description = dict(SCENARIOS)[scenario.get()]
+        event = build_event(scenario.get(), description)
+        try:
+            response = requests.post(
+                CLOUD_ENDPOINT, json=event,
+                headers={"X-API-Key": API_TOKEN}, timeout=10
+            )
+            output.insert("end", f"{response.status_code}: {response.text}\n")
+        except requests.RequestException as exc:
+            messagebox.showerror("Delivery failed", str(exc))
 
-    tk.Button(root, text="Send Synthetic Event", command=send_demo, width=24).pack(pady=14)
+    tk.Button(root, text="Generate & Detect", command=send, width=24).pack(pady=10)
     tk.Button(root, text="Exit", command=root.destroy, width=24).pack()
     root.mainloop()
 
