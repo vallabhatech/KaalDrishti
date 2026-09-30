@@ -1,11 +1,5 @@
-pynput
-pyperclip
-Pillow
-opencv-python
-tk
-numpy
-requests
-pyperclip
-flask
-python-dotenv
-supabase
+Flask>=3.1,<4
+python-dotenv>=1.1,<2
+requests>=2.32,<3
+pytest>=8.4,<9
+ruff>=0.13,<1
